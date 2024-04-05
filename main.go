@@ -32,17 +32,7 @@ func getUrl(url string) *http.Response {
 	return res
 }
 
-func main() {
-	res := getUrl(url)
-	defer res.Body.Close()
-
-	doc, err := goquery.NewDocumentFromReader(res.Body)
-
-	if err != nil {
-		fmt.Printf("error parsing document: %s\n", err)
-		os.Exit(1)
-	}
-
+func findByClassOrId(doc *goquery.Document) []*goquery.Selection {
 	// look for ul elements that have a class or id that indicates ingredients
 	var possibleIngredientUls []*goquery.Selection
 	doc.Find("ul").Each(func(_ int, selection *goquery.Selection) {
@@ -54,16 +44,39 @@ func main() {
 		}
 	})
 
-	var ingredientCandidates [][]string
+	return possibleIngredientUls
+}
 
-	for _, selection := range possibleIngredientUls {
+func buildIngredientCandidates(selections []*goquery.Selection) [][]string {
+	var candidates [][]string
+	for _, selection := range selections {
 		var ingredientSet []string
 		selection.Find("li").Each(func(_ int, s *goquery.Selection) {
 			ingredientSet = append(ingredientSet, s.Text())
 		})
 
-		ingredientCandidates = append(ingredientCandidates, ingredientSet)
+		candidates = append(candidates, ingredientSet)
 	}
+
+	return candidates
+}
+
+func main() {
+	res := getUrl(url)
+	defer res.Body.Close()
+
+	doc, err := goquery.NewDocumentFromReader(res.Body)
+
+	if err != nil {
+		fmt.Printf("error parsing document: %s\n", err)
+		os.Exit(1)
+	}
+
+	var ingredientCandidates [][]string
+
+	possibleIngredientUls := findByClassOrId(doc)
+
+	ingredientCandidates = buildIngredientCandidates(possibleIngredientUls)
 
 	fmt.Printf("%v possible sets of ingredients found\n", len(ingredientCandidates))
 	for index, set := range ingredientCandidates {
