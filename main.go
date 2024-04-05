@@ -16,7 +16,7 @@ var url3 string = "https://recipes.co.nz/recipes/the-best-smash-burgers/"
 var url4 string = "https://mykoreankitchen.com/kimchi-recipe/"
 var url5 string = "https://www.womensweeklyfood.com.au/recipe/baking/shepherds-pie-7402/"
 
-var keyword string = "ingredient"
+var ingredientsKeyword string = "ingredient"
 
 func getUrl(url string) *http.Response {
 	res, err := http.Get(url)
@@ -36,21 +36,6 @@ func getUrl(url string) *http.Response {
 	return res
 }
 
-func findUlByClassOrId(doc *goquery.Document) []*goquery.Selection {
-	// look for ul elements that have a class or id that indicates ingredients
-	var possibleIngredientUls []*goquery.Selection
-	doc.Find("ul").Each(func(_ int, selection *goquery.Selection) {
-		class := selection.AttrOr("class", "")
-		id := selection.AttrOr("id", "")
-
-		if strings.Contains(class, keyword) || strings.Contains(id, keyword) {
-			possibleIngredientUls = append(possibleIngredientUls, selection)
-		}
-	})
-
-	return possibleIngredientUls
-}
-
 func ulToCandidates(selections []*goquery.Selection) [][]string {
 	var candidates [][]string
 	for _, selection := range selections {
@@ -65,6 +50,21 @@ func ulToCandidates(selections []*goquery.Selection) [][]string {
 	}
 
 	return candidates
+}
+
+func findByClassOrIdContains(doc *goquery.Document, elType string, keyword string) []*goquery.Selection {
+	var matchingElements []*goquery.Selection
+
+	doc.Find(elType).Each(func(_ int, selection *goquery.Selection) {
+		class := selection.AttrOr("class", "")
+		id := selection.AttrOr("id", "")
+
+		if strings.Contains(class, keyword) || strings.Contains(id, keyword) {
+			matchingElements = append(matchingElements, selection)
+		}
+	})
+
+	return matchingElements
 }
 
 func pullRecipe(url string) {
@@ -82,7 +82,7 @@ func pullRecipe(url string) {
 
 	var ingredientCandidates [][]string
 
-	possibleIngredientUlsByClassOrId := findUlByClassOrId(doc)
+	possibleIngredientUlsByClassOrId := findByClassOrIdContains(doc, "ul", ingredientsKeyword)
 
 	if len(possibleIngredientUlsByClassOrId) > 0 {
 		ingredientCandidates = append(ingredientCandidates, ulToCandidates(possibleIngredientUlsByClassOrId)...)
@@ -91,24 +91,13 @@ func pullRecipe(url string) {
 		fmt.Println("No ul found, checking other types of elements...")
 		fmt.Println("")
 
-		var matchingElements []*goquery.Selection
+		possibleIngredientsElements := findByClassOrIdContains(doc, "*", ingredientsKeyword)
 
-		doc.Find("*").Each(func(_ int, selection *goquery.Selection) {
-			if len(matchingElements) > 0 {
-				return
-			}
+		if len(possibleIngredientsElements) == 0 {
+			fmt.Printf("No elements found whose class or id contains keyword '%v'\n", ingredientsKeyword)
+		} else {
+			firstMatching := possibleIngredientsElements[0]
 
-			class := selection.AttrOr("class", "")
-			id := selection.AttrOr("id", "")
-
-			if strings.Contains(class, keyword) || strings.Contains(id, keyword) {
-				matchingElements = append(matchingElements, selection)
-			}
-		})
-
-		firstMatching := matchingElements[0]
-
-		if firstMatching != nil {
 			var textItems []string
 			firstMatching.Find("*>*:last-of-type").Each(func(_ int, s *goquery.Selection) {
 				t := s.Text()
@@ -134,14 +123,6 @@ func pullRecipe(url string) {
 	fmt.Println("")
 }
 
-func main() {
-	pullRecipe(url)
-	pullRecipe(url2)
-	pullRecipe(url3)
-	pullRecipe(url4)
-	pullRecipe(url5)
-}
-
 func tidyIngredients(textItems []string) []string {
 	var trimmed []string
 	for _, item := range textItems {
@@ -163,4 +144,12 @@ func unique(s []string) []string {
 		}
 	}
 	return result
+}
+
+func main() {
+	pullRecipe(url)
+	pullRecipe(url2)
+	pullRecipe(url3)
+	pullRecipe(url4)
+	pullRecipe(url5)
 }
