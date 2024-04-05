@@ -59,13 +59,15 @@ func ulToCandidates(selections []*goquery.Selection) [][]string {
 			ingredientSet = append(ingredientSet, s.Text())
 		})
 
-		candidates = append(candidates, ingredientSet)
+		tidiedIngredients := tidyIngredients(ingredientSet)
+
+		candidates = append(candidates, tidiedIngredients)
 	}
 
 	return candidates
 }
 
-func pullRecipeGoquery(url string) {
+func pullRecipe(url string) {
 	fmt.Println("")
 	fmt.Printf("Pulling recipe from %v\n", url)
 	res := getUrl(url)
@@ -112,16 +114,10 @@ func pullRecipeGoquery(url string) {
 				t := s.Text()
 				textItems = append(textItems, t)
 			})
-			dedupedTextItems := unique(textItems)
 
-			var trimmed []string
-			for _, item := range dedupedTextItems {
-				trimmed = append(trimmed, strings.TrimSpace(item))
-			}
+			tidiedTextItems := tidyIngredients(textItems)
 
-			reDeduped := unique(trimmed)
-
-			ingredientCandidates = append(ingredientCandidates, reDeduped)
+			ingredientCandidates = append(ingredientCandidates, tidiedTextItems)
 		}
 	}
 
@@ -138,26 +134,23 @@ func pullRecipeGoquery(url string) {
 	fmt.Println("")
 }
 
-// func pullRecipe(url string) {
-// 	res := getUrl(url)
-// 	defer res.Body.Close()
-//
-// 	body, err := io.ReadAll(res.Body)
-//
-// 	if err != nil {
-// 		fmt.Printf("error parsing response body: %s\n", err)
-// 		os.Exit(1)
-// 	}
-//
-// 	fmt.Printf("parsed body: %v \n", string(body))
-// }
-
 func main() {
-	// pullRecipeGoquery(url)
-	// pullRecipeGoquery(url2)
-	// pullRecipeGoquery(url3)
-	// pullRecipeGoquery(url4)
-	pullRecipeGoquery(url5)
+	pullRecipe(url)
+	pullRecipe(url2)
+	pullRecipe(url3)
+	pullRecipe(url4)
+	pullRecipe(url5)
+}
+
+func tidyIngredients(textItems []string) []string {
+	var trimmed []string
+	for _, item := range textItems {
+		trimmed = append(trimmed, strings.TrimSpace(item))
+	}
+
+	reDeduped := unique(trimmed)
+
+	return reDeduped
 }
 
 func unique(s []string) []string {
