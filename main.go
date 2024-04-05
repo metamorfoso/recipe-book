@@ -14,16 +14,27 @@ var url string = "https://anaffairfromtheheart.com/meat-ragout/"
 var url2 string = "https://www.delish.com/cooking/recipe-ideas/recipes/a47922/lemon-butter-chicken-pasta-recipe/"
 var keyword string = "ingredient"
 
-func main() {
+func getUrl(url string) *http.Response {
 	res, err := http.Get(url)
 
 	if err != nil {
 		fmt.Printf("error making http request: %s\n", err)
 		os.Exit(1)
 	}
-	defer res.Body.Close()
 
 	fmt.Printf("%v %v\n", res.StatusCode, url)
+
+	if res.StatusCode != http.StatusOK {
+		fmt.Printf("Exiting... got response status code %v for %v\n", res.StatusCode, url)
+		os.Exit(1)
+	}
+
+	return res
+}
+
+func main() {
+	res := getUrl(url)
+	defer res.Body.Close()
 
 	doc, err := goquery.NewDocumentFromReader(res.Body)
 
