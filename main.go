@@ -26,14 +26,10 @@ func getUrl(url string) (*http.Response, error) {
 
 	if err != nil {
 		fmt.Printf("error making http request: %s\n", err)
-		// os.Exit(1)
 	}
-
-	// fmt.Printf("%v %v\n", res.StatusCode, url)
 
 	if res.StatusCode != http.StatusOK {
 		fmt.Printf("Exiting... got response status code %v for %v\n", res.StatusCode, url)
-		// os.Exit(1)
 	}
 
 	return res, err
@@ -172,7 +168,6 @@ func main() {
 	for _, url := range testUrls {
 		wg.Add(1)
 		go asyncPullRecipe(url)
-		// pullRecipe(url)
 	}
 
 	go func() {
