@@ -96,6 +96,7 @@ func pullRecipe(url string) {
 		if len(possibleIngredientsElements) == 0 {
 			fmt.Printf("No elements found whose class or id contains keyword '%v'\n", ingredientsKeyword)
 		} else {
+			// Note: for now it seems only the first match is relevant. This needs more exploration.
 			firstMatching := possibleIngredientsElements[0]
 
 			var textItems []string
