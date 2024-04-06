@@ -72,12 +72,27 @@ func findByClassOrIdContains(doc *goquery.Document, elType string, keyword strin
 
 type IngredientCandidates = [][]string
 
-func pullRecipe(url string) IngredientCandidates {
+type RecipePullResult struct {
+	Url             string
+	Ingredients     IngredientCandidates
+	DiscoveryMethod string
+}
+
+func (r *RecipePullResult) appendIngredients(ingredients []string) {
+	r.Ingredients = append(r.Ingredients, ingredients)
+}
+
+func pullRecipe(url string) RecipePullResult {
+	result := RecipePullResult{
+		Url:         url,
+		Ingredients: IngredientCandidates{},
+	}
+
 	fmt.Printf("Pulling recipe from %v\n", url)
 	res, err := getUrl(url)
 
 	if err != nil {
-		return [][]string{}
+		return result
 	}
 
 	defer res.Body.Close()
@@ -86,8 +101,7 @@ func pullRecipe(url string) IngredientCandidates {
 
 	if err != nil {
 		fmt.Printf("error parsing document: %s\n", err)
-		// os.Exit(1)
-		return [][]string{}
+		return result
 	}
 
 	var ingredientCandidates IngredientCandidates
@@ -96,10 +110,9 @@ func pullRecipe(url string) IngredientCandidates {
 
 	if len(possibleIngredientUlsByClassOrId) > 0 {
 		ingredientCandidates = append(ingredientCandidates, ulToCandidates(possibleIngredientUlsByClassOrId)...)
+		result.DiscoveryMethod = "ul"
 	} else {
-		// fmt.Println("")
 		fmt.Printf("No ul found in %v, checking other types of elements...\n", url)
-		// fmt.Println("")
 
 		possibleIngredientsElements := findByClassOrIdContains(doc, "*", ingredientsKeyword)
 
@@ -118,22 +131,12 @@ func pullRecipe(url string) IngredientCandidates {
 			tidiedTextItems := tidyIngredients(textItems)
 
 			ingredientCandidates = append(ingredientCandidates, tidiedTextItems)
+			result.DiscoveryMethod = "*"
 		}
 	}
 
-	// fmt.Println("")
-	// fmt.Printf("%v possible sets of ingredients found\n", len(ingredientCandidates))
-	// for index, set := range ingredientCandidates {
-	// 	fmt.Printf("Set %v:\n", index+1)
-	// 	for _, ingredient := range set {
-	// 		fmt.Printf("- %v\n", ingredient)
-	// 	}
-	// }
-	// fmt.Println("")
-	// fmt.Println("")
-	// fmt.Println("")
-
-	return ingredientCandidates
+	result.Ingredients = ingredientCandidates
+	return result
 }
 
 func tidyIngredients(textItems []string) []string {
@@ -162,14 +165,11 @@ func unique(s []string) []string {
 func main() {
 	wg := &sync.WaitGroup{}
 
-	channel := make(chan map[string]IngredientCandidates)
+	channel := make(chan RecipePullResult)
 
 	asyncPullRecipe := func(url string) {
-		candidates := pullRecipe(url)
-		candidatesForUrl := map[string]IngredientCandidates{
-			url: candidates,
-		}
-		channel <- candidatesForUrl
+		pullResult := pullRecipe(url)
+		channel <- pullResult
 		wg.Done()
 	}
 
@@ -185,17 +185,14 @@ func main() {
 	}()
 
 	for result := range channel {
-		for k, v := range result {
-			fmt.Println("------")
-			fmt.Printf("Possible ingredients for %v:\n", k)
+		fmt.Println("------")
+		fmt.Printf("Possible ingredients for %v:\n", result.Url)
 
-			for index, ingredientGroup := range v {
-				fmt.Printf("Set %v:\n", index+1)
-				for _, ingredient := range ingredientGroup {
-					fmt.Printf("- %v\n", ingredient)
-				}
+		for index, ingredientGroup := range result.Ingredients {
+			fmt.Printf("Set %v:\n", index+1)
+			for _, ingredient := range ingredientGroup {
+				fmt.Printf("- %v\n", ingredient)
 			}
-			fmt.Println("------")
 		}
 	}
 }
