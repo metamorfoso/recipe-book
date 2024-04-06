@@ -78,8 +78,8 @@ type RecipePullResult struct {
 	DiscoveryMethod string
 }
 
-func (r *RecipePullResult) appendIngredients(ingredients []string) {
-	r.Ingredients = append(r.Ingredients, ingredients)
+func (r *RecipePullResult) appendIngredients(ingredients [][]string) {
+	r.Ingredients = append(r.Ingredients, ingredients...)
 }
 
 func pullRecipe(url string) RecipePullResult {
@@ -104,38 +104,34 @@ func pullRecipe(url string) RecipePullResult {
 		return result
 	}
 
-	var ingredientCandidates IngredientCandidates
-
+	result.DiscoveryMethod = "ul"
 	possibleIngredientUlsByClassOrId := findByClassOrIdContains(doc, "ul", ingredientsKeyword)
 
 	if len(possibleIngredientUlsByClassOrId) > 0 {
-		ingredientCandidates = append(ingredientCandidates, ulToCandidates(possibleIngredientUlsByClassOrId)...)
-		result.DiscoveryMethod = "ul"
-	} else {
-		fmt.Printf("No ul found in %v, checking other types of elements...\n", url)
-
-		possibleIngredientsElements := findByClassOrIdContains(doc, "*", ingredientsKeyword)
-
-		if len(possibleIngredientsElements) == 0 {
-			fmt.Printf("No elements in %v found whose class or id contains keyword '%v'\n", url, ingredientsKeyword)
-		} else {
-			// Note: for now it seems only the first match is relevant. This needs more exploration.
-			firstMatching := possibleIngredientsElements[0]
-
-			var textItems []string
-			firstMatching.Find("*>*:last-of-type").Each(func(_ int, s *goquery.Selection) {
-				t := s.Text()
-				textItems = append(textItems, t)
-			})
-
-			tidiedTextItems := tidyIngredients(textItems)
-
-			ingredientCandidates = append(ingredientCandidates, tidiedTextItems)
-			result.DiscoveryMethod = "*"
-		}
+		candidates := ulToCandidates(possibleIngredientUlsByClassOrId)
+		result.appendIngredients(candidates)
+		return result
 	}
 
-	result.Ingredients = ingredientCandidates
+	result.DiscoveryMethod = "*"
+	possibleIngredientsElements := findByClassOrIdContains(doc, "*", ingredientsKeyword)
+
+	if len(possibleIngredientsElements) == 0 {
+		return result
+	}
+
+	// Note: for now it seems only the first match is relevant. This needs more exploration.
+	firstMatching := possibleIngredientsElements[0]
+
+	var textItems []string
+	firstMatching.Find("*>*:last-of-type").Each(func(_ int, s *goquery.Selection) {
+		t := s.Text()
+		textItems = append(textItems, t)
+	})
+
+	tidiedTextItems := tidyIngredients(textItems)
+
+	result.appendIngredients(IngredientCandidates{tidiedTextItems})
 	return result
 }
 
@@ -187,6 +183,7 @@ func main() {
 	for result := range channel {
 		fmt.Println("------")
 		fmt.Printf("Possible ingredients for %v:\n", result.Url)
+		fmt.Printf("(Discovered by looking through %v elements)\n", result.DiscoveryMethod)
 
 		for index, ingredientGroup := range result.Ingredients {
 			fmt.Printf("Set %v:\n", index+1)
