@@ -10,11 +10,15 @@ import (
 	// "github.com/gocolly/colly/v2"
 )
 
-var url string = "https://anaffairfromtheheart.com/meat-ragout/"
-var url2 string = "https://www.delish.com/cooking/recipe-ideas/recipes/a47922/lemon-butter-chicken-pasta-recipe/"
-var url3 string = "https://recipes.co.nz/recipes/the-best-smash-burgers/"
-var url4 string = "https://mykoreankitchen.com/kimchi-recipe/"
-var url5 string = "https://www.womensweeklyfood.com.au/recipe/baking/shepherds-pie-7402/"
+var testUrls []string = []string{
+	"https://anaffairfromtheheart.com/meat-ragout/",
+	"https://www.delish.com/cooking/recipe-ideas/recipes/a47922/lemon-butter-chicken-pasta-recipe/",
+	"https://recipes.co.nz/recipes/the-best-smash-burgers/",
+	"https://mykoreankitchen.com/kimchi-recipe/",
+	"https://www.womensweeklyfood.com.au/recipe/baking/shepherds-pie-7402/",
+	"https://khinskitchen.com/lamb-karahi/",
+	"https://www.recipetineats.com/beef-barbacoa/",
+}
 
 var ingredientsKeyword string = "ingredient"
 
@@ -148,9 +152,7 @@ func unique(s []string) []string {
 }
 
 func main() {
-	pullRecipe(url)
-	pullRecipe(url2)
-	pullRecipe(url3)
-	pullRecipe(url4)
-	pullRecipe(url5)
+	for _, url := range testUrls {
+		pullRecipe(url)
+	}
 }
