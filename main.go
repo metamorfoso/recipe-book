@@ -78,7 +78,7 @@ func (r *RecipePullResult) appendIngredients(ingredients [][]string) {
 	r.Ingredients = append(r.Ingredients, ingredients...)
 }
 
-func pullRecipe(url string) RecipePullResult {
+func pullRecipe(url string) (RecipePullResult, error) {
 	result := RecipePullResult{
 		Url:         url,
 		Ingredients: IngredientCandidates{},
@@ -88,7 +88,7 @@ func pullRecipe(url string) RecipePullResult {
 	res, err := getUrl(url)
 
 	if err != nil {
-		return result
+		return result, err
 	}
 
 	defer res.Body.Close()
@@ -97,7 +97,7 @@ func pullRecipe(url string) RecipePullResult {
 
 	if err != nil {
 		fmt.Printf("error parsing document: %s\n", err)
-		return result
+		return result, err
 	}
 
 	result.DiscoveryMethod = "ul"
@@ -106,14 +106,14 @@ func pullRecipe(url string) RecipePullResult {
 	if len(possibleIngredientUlsByClassOrId) > 0 {
 		candidates := ulToCandidates(possibleIngredientUlsByClassOrId)
 		result.appendIngredients(candidates)
-		return result
+		return result, nil
 	}
 
 	result.DiscoveryMethod = "*"
 	possibleIngredientsElements := findByClassOrIdContains(doc, "*", ingredientsKeyword)
 
 	if len(possibleIngredientsElements) == 0 {
-		return result
+		return result, nil
 	}
 
 	// Note: for now it seems only the first match is relevant. This needs more exploration.
@@ -128,7 +128,7 @@ func pullRecipe(url string) RecipePullResult {
 	tidiedTextItems := tidyIngredients(textItems)
 
 	result.appendIngredients(IngredientCandidates{tidiedTextItems})
-	return result
+	return result, nil
 }
 
 func tidyIngredients(textItems []string) []string {
@@ -154,14 +154,19 @@ func unique(s []string) []string {
 	return result
 }
 
+type ChannelOutput struct {
+	Result RecipePullResult
+	Error  error
+}
+
 func main() {
 	wg := &sync.WaitGroup{}
 
-	channel := make(chan RecipePullResult)
+	channel := make(chan ChannelOutput)
 
 	asyncPullRecipe := func(url string) {
-		pullResult := pullRecipe(url)
-		channel <- pullResult
+		pullResult, err := pullRecipe(url)
+		channel <- ChannelOutput{Result: pullResult, Error: err}
 		wg.Done()
 	}
 
@@ -175,15 +180,20 @@ func main() {
 		close(channel)
 	}()
 
-	for result := range channel {
+	for output := range channel {
 		fmt.Println("------")
-		fmt.Printf("Possible ingredients for %v:\n", result.Url)
-		fmt.Printf("(Discovered by looking through %v elements)\n", result.DiscoveryMethod)
 
-		for index, ingredientGroup := range result.Ingredients {
-			fmt.Printf("Set %v:\n", index+1)
-			for _, ingredient := range ingredientGroup {
-				fmt.Printf("- %v\n", ingredient)
+		if output.Error != nil {
+			fmt.Printf(">>>> ERROR processing %v: %v\n", output.Result.Url, output.Error)
+		} else {
+			fmt.Printf("Possible ingredients for %v:\n", output.Result.Url)
+			fmt.Printf("(Discovered by looking through %v elements)\n", output.Result.DiscoveryMethod)
+
+			for index, ingredientGroup := range output.Result.Ingredients {
+				fmt.Printf("Set %v:\n", index+1)
+				for _, ingredient := range ingredientGroup {
+					fmt.Printf("- %v\n", ingredient)
+				}
 			}
 		}
 	}
