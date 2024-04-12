@@ -25,11 +25,11 @@ func getUrl(url string) (*http.Response, error) {
 	res, err := http.Get(url)
 
 	if err != nil {
-		fmt.Printf("error making http request: %s\n", err)
+		fmt.Printf("Error making http request: %s\n", err)
 	}
 
 	if res.StatusCode != http.StatusOK {
-		fmt.Printf("Exiting... got response status code %v for %v\n", res.StatusCode, url)
+		fmt.Printf("Got response status code %v for %v\n", res.StatusCode, url)
 	}
 
 	return res, err
