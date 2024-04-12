@@ -1,4 +1,4 @@
-module recipe-book
+module github.com/metamorfoso/recipe-book
 
 go 1.22.1
 
