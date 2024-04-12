@@ -1,4 +1,4 @@
-package main
+package recipes
 
 import (
 	"fmt"
@@ -78,7 +78,7 @@ func (r *RecipePullResult) appendIngredients(ingredients [][]string) {
 	r.Ingredients = append(r.Ingredients, ingredients...)
 }
 
-func pullRecipe(url string) (RecipePullResult, error) {
+func PullRecipe(url string) (RecipePullResult, error) {
 	result := RecipePullResult{
 		Url:         url,
 		Ingredients: IngredientCandidates{},
@@ -159,13 +159,13 @@ type ChannelOutput struct {
 	Error  error
 }
 
-func testPullRecipes() {
+func TestPullRecipes() {
 	wg := &sync.WaitGroup{}
 
 	channel := make(chan ChannelOutput)
 
 	asyncPullRecipe := func(url string) {
-		pullResult, err := pullRecipe(url)
+		pullResult, err := PullRecipe(url)
 		channel <- ChannelOutput{Result: pullResult, Error: err}
 		wg.Done()
 	}
