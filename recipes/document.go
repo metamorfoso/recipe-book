@@ -49,6 +49,6 @@ func textFromDeepestLastOfType(possibleIngredientsElements []*goquery.Selection)
 
 	tidiedTextItems := tidyIngredients(textItems)
 
-	return IngredientCandidates{tidiedTextItems}
+	return Candidates{tidiedTextItems}
 
 }

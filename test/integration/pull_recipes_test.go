@@ -52,9 +52,9 @@ func TestPullRecipe(t *testing.T) {
 			t.Fail()
 		} else {
 			fmt.Printf("Possible ingredients for %v:\n", output.Result.Url)
-			fmt.Printf("(Discovered by looking through %v elements)\n", output.Result.DiscoveryMethod)
+			fmt.Printf("(Discovered by looking through %v elements)\n", output.Result.Ingredients.DiscoveredVia)
 
-			for index, ingredientGroup := range output.Result.Ingredients {
+			for index, ingredientGroup := range output.Result.Ingredients.Candidates {
 				fmt.Printf("Set %v:\n", index+1)
 				for _, ingredient := range ingredientGroup {
 					fmt.Printf("- %v\n", ingredient)

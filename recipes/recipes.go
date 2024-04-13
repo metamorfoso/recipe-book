@@ -23,22 +23,52 @@ func getUrl(url string) (*http.Response, error) {
 	return res, err
 }
 
-type IngredientCandidates = [][]string
+type Candidates = [][]string
 
-type RecipePullResult struct {
-	Url             string
-	Ingredients     IngredientCandidates
-	DiscoveryMethod string
+type SubResult struct {
+	Candidates    Candidates
+	DiscoveredVia string
 }
 
-func (r *RecipePullResult) appendIngredients(ingredients [][]string) {
-	r.Ingredients = append(r.Ingredients, ingredients...)
+func (subResult *SubResult) appendIngredients(ingredients [][]string) {
+	subResult.Candidates = append(subResult.Candidates, ingredients...)
+}
+
+type RecipePullResult struct {
+	Url           string
+	Ingredients   SubResult
+	CookingMethod SubResult
+}
+
+func findIngredients(doc *goquery.Document) (SubResult, error) {
+	result := SubResult{}
+
+	result.DiscoveredVia = "ul"
+	possibleIngredientUlsByClassOrId := findByClassOrIdContains(doc, "ul", ingredientsKeyword)
+
+	if len(possibleIngredientUlsByClassOrId) > 0 {
+		candidates := ulToCandidates(possibleIngredientUlsByClassOrId)
+		result.appendIngredients(candidates)
+		return result, nil
+	}
+
+	result.DiscoveredVia = "*"
+	possibleIngredientsElements := findByClassOrIdContains(doc, "*", ingredientsKeyword)
+
+	if len(possibleIngredientsElements) == 0 {
+		return result, nil
+	}
+
+	candidates := textFromDeepestLastOfType(possibleIngredientsElements)
+	result.appendIngredients(candidates)
+
+	return result, nil
 }
 
 func PullRecipe(url string) (RecipePullResult, error) {
 	result := RecipePullResult{
 		Url:         url,
-		Ingredients: IngredientCandidates{},
+		Ingredients: SubResult{},
 	}
 
 	fmt.Printf("Pulling recipe from %v\n", url)
@@ -51,29 +81,17 @@ func PullRecipe(url string) (RecipePullResult, error) {
 	defer res.Body.Close()
 
 	doc, err := goquery.NewDocumentFromReader(res.Body)
-
 	if err != nil {
 		fmt.Printf("error parsing document: %s\n", err)
 		return result, err
 	}
 
-	result.DiscoveryMethod = "ul"
-	possibleIngredientUlsByClassOrId := findByClassOrIdContains(doc, "ul", ingredientsKeyword)
-
-	if len(possibleIngredientUlsByClassOrId) > 0 {
-		candidates := ulToCandidates(possibleIngredientUlsByClassOrId)
-		result.appendIngredients(candidates)
-		return result, nil
+	ingredientsResult, err := findIngredients(doc)
+	if err != nil {
+		return result, err
 	}
 
-	result.DiscoveryMethod = "*"
-	possibleIngredientsElements := findByClassOrIdContains(doc, "*", ingredientsKeyword)
+	result.Ingredients = ingredientsResult
 
-	if len(possibleIngredientsElements) == 0 {
-		return result, nil
-	}
-
-	candidates := textFromDeepestLastOfType(possibleIngredientsElements)
-	result.appendIngredients(candidates)
 	return result, nil
 }
