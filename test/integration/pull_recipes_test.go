@@ -60,6 +60,16 @@ func TestPullRecipe(t *testing.T) {
 					fmt.Printf("- %v\n", ingredient)
 				}
 			}
+
+			fmt.Printf("Possible instructions for %v:\n", output.Result.Url)
+			fmt.Printf("(Discovered by looking through %v elements)\n", output.Result.Instructions.DiscoveredVia)
+
+			for index, instructionsGroup := range output.Result.Instructions.Candidates {
+				fmt.Printf("Set %v:\n", index+1)
+				for _, instruction := range instructionsGroup {
+					fmt.Printf("- %v\n", instruction)
+				}
+			}
 		}
 	}
 }

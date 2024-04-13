@@ -9,6 +9,8 @@ import (
 
 var ingredientsKeyword string = "ingredient"
 
+var instructionsKeywords []string = []string{"instruction", "method"}
+
 func getUrl(url string) (*http.Response, error) {
 	res, err := http.Get(url)
 
@@ -30,14 +32,14 @@ type SubResult struct {
 	DiscoveredVia string
 }
 
-func (subResult *SubResult) appendIngredients(ingredients [][]string) {
-	subResult.Candidates = append(subResult.Candidates, ingredients...)
+func (subResult *SubResult) appendCandidates(candidates [][]string) {
+	subResult.Candidates = append(subResult.Candidates, candidates...)
 }
 
 type RecipePullResult struct {
-	Url           string
-	Ingredients   SubResult
-	CookingMethod SubResult
+	Url          string
+	Ingredients  SubResult
+	Instructions SubResult
 }
 
 func findIngredients(doc *goquery.Document) (SubResult, error) {
@@ -48,7 +50,7 @@ func findIngredients(doc *goquery.Document) (SubResult, error) {
 
 	if len(possibleIngredientUlsByClassOrId) > 0 {
 		candidates := ulToCandidates(possibleIngredientUlsByClassOrId)
-		result.appendIngredients(candidates)
+		result.appendCandidates(candidates)
 		return result, nil
 	}
 
@@ -60,7 +62,33 @@ func findIngredients(doc *goquery.Document) (SubResult, error) {
 	}
 
 	candidates := textFromDeepestLastOfType(possibleIngredientsElements)
-	result.appendIngredients(candidates)
+	result.appendCandidates(candidates)
+
+	return result, nil
+}
+
+func findInstructions(doc *goquery.Document) (SubResult, error) {
+	result := SubResult{}
+
+	result.DiscoveredVia = "ol"
+
+	possibleInstructionsOls := findByClassOrIdContains(doc, "ol", instructionsKeywords[0])
+
+	if len(possibleInstructionsOls) > 0 {
+		candidates := ulToCandidates(possibleInstructionsOls)
+		result.appendCandidates(candidates)
+		return result, nil
+	}
+
+	result.DiscoveredVia = "*"
+	possibleInstructionsElements := findByClassOrIdContains(doc, "*", instructionsKeywords[0])
+
+	if len(possibleInstructionsElements) == 0 {
+		return result, nil
+	}
+
+	candidates := textFromDeepestLastOfType(possibleInstructionsElements)
+	result.appendCandidates(candidates)
 
 	return result, nil
 }
@@ -90,8 +118,13 @@ func PullRecipe(url string) (RecipePullResult, error) {
 	if err != nil {
 		return result, err
 	}
-
 	result.Ingredients = ingredientsResult
+
+	instructionsResult, err := findInstructions(doc)
+	if err != nil {
+		return result, err
+	}
+	result.Instructions = instructionsResult
 
 	return result, nil
 }
