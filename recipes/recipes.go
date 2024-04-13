@@ -3,6 +3,7 @@ package recipes
 import (
 	"fmt"
 	"net/http"
+	"sync"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -114,17 +115,42 @@ func PullRecipe(url string) (RecipePullResult, error) {
 		return result, err
 	}
 
-	ingredientsResult, err := findIngredients(doc)
-	if err != nil {
-		return result, err
+	type SubresultChannelOuput struct {
+		Type      string
+		SubResult SubResult
+		Error     error
 	}
-	result.Ingredients = ingredientsResult
 
-	instructionsResult, err := findInstructions(doc)
-	if err != nil {
-		return result, err
+	wg := &sync.WaitGroup{}
+	ch := make(chan SubresultChannelOuput)
+
+	wg.Add(1)
+	go func() {
+		ingredientsResult, err := findIngredients(doc)
+		ch <- SubresultChannelOuput{SubResult: ingredientsResult, Error: err, Type: "ingredients"}
+		wg.Done()
+	}()
+
+	wg.Add(1)
+	go func() {
+		instructionsResult, err := findInstructions(doc)
+		ch <- SubresultChannelOuput{SubResult: instructionsResult, Error: err, Type: "instructions"}
+		wg.Done()
+	}()
+
+	go func() {
+		wg.Wait()
+		close(ch)
+	}()
+
+	for output := range ch {
+		switch output.Type {
+		case "ingredients":
+			result.Ingredients = output.SubResult
+		case "instructions":
+			result.Instructions = output.SubResult
+		}
 	}
-	result.Instructions = instructionsResult
 
 	return result, nil
 }
