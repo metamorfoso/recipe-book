@@ -14,34 +14,33 @@ func (subResult *RecipeSectionResult) appendCandidates(candidates [][]string) {
 func findRecipeSection(doc *goquery.Document, priorityElementType string, keywords []string) (RecipeSectionResult, error) {
 	result := RecipeSectionResult{}
 
-	possiblePriorityElementSelections := findByClassOrIdContains(doc, priorityElementType, keywords[0])
+	for _, keyword := range keywords {
+		selections := findByClassOrIdContains(doc, priorityElementType, keyword)
 
-	if len(possiblePriorityElementSelections) > 0 {
-		result.DiscoveredVia = priorityElementType
-
-		var candidates [][]string
-
-		switch priorityElementType {
-		case "ul":
-			candidates = ulToCandidates(possiblePriorityElementSelections)
-		case "ol":
-			candidates = ulToCandidates(possiblePriorityElementSelections)
-			// TODO: other types of priority elements?
+		if len(selections) == 0 {
+			break
 		}
 
+		candidates := ulToCandidates(selections)
+		result.DiscoveredVia = priorityElementType
 		result.appendCandidates(candidates)
+	}
+
+	if len(result.Candidates) > 0 {
 		return result, nil
 	}
 
-	result.DiscoveredVia = "*"
-	possibleRelevantElementSelections := findByClassOrIdContains(doc, "*", instructionsKeywords[0])
+	for _, keyword := range keywords {
+		selections := findByClassOrIdContains(doc, "*", keyword)
 
-	if len(possibleRelevantElementSelections) == 0 {
-		return result, nil
+		if len(selections) == 0 {
+			break
+		}
+
+		candidates := textFromDeepestLastOfType(selections)
+		result.DiscoveredVia = "*"
+		result.appendCandidates(candidates)
 	}
-
-	candidates := textFromDeepestLastOfType(possibleRelevantElementSelections)
-	result.appendCandidates(candidates)
 
 	return result, nil
 }
