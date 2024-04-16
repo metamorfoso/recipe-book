@@ -6,7 +6,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-func ulToCandidates(selections []*goquery.Selection) [][]string {
+func listElementSelectionsToCandidates(selections []*goquery.Selection) [][]string {
 	var candidates [][]string
 	for _, selection := range selections {
 		var ingredientSet []string
