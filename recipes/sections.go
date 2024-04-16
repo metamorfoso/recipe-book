@@ -18,7 +18,7 @@ func findRecipeSection(doc *goquery.Document, priorityElementType string, keywor
 		selections := findByClassOrIdContains(doc, priorityElementType, keyword)
 
 		if len(selections) == 0 {
-			break
+			continue
 		}
 
 		candidates := ulToCandidates(selections)
@@ -34,10 +34,10 @@ func findRecipeSection(doc *goquery.Document, priorityElementType string, keywor
 		selections := findByClassOrIdContains(doc, "*", keyword)
 
 		if len(selections) == 0 {
-			break
+			continue
 		}
 
-		candidates := textFromDeepestLastOfType(selections)
+		candidates := textFromElementSelections(selections)
 		result.DiscoveredVia = "*"
 		result.appendCandidates(candidates)
 	}

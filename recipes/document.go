@@ -37,18 +37,13 @@ func findByClassOrIdContains(doc *goquery.Document, elType string, keyword strin
 	return matchingElements
 }
 
-func textFromDeepestLastOfType(possibleIngredientsElements []*goquery.Selection) [][]string {
+func textFromElementSelections(selections []*goquery.Selection) [][]string {
 	// Note: for now it seems only the first match is relevant. This needs more exploration.
-	firstMatching := possibleIngredientsElements[0]
+	firstMatching := selections[0]
 
-	var textItems []string
-	firstMatching.Find("*>*:last-of-type").Each(func(_ int, s *goquery.Selection) {
-		t := s.Text()
-		textItems = append(textItems, t)
-	})
-
+	text := firstMatching.Text()
+	textItems := strings.Split(text, "\n")
 	tidiedTextItems := tidyIngredients(textItems)
 
 	return Candidates{tidiedTextItems}
-
 }
