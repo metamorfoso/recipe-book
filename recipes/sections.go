@@ -1,6 +1,10 @@
 package recipes
 
-import "github.com/PuerkitoBio/goquery"
+import (
+	"strings"
+
+	"github.com/PuerkitoBio/goquery"
+)
 
 type RecipeSectionResult struct {
 	Candidates    Candidates
