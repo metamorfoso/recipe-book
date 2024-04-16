@@ -1,11 +1,14 @@
 package recipes
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
 	"sync"
 	"testing"
 
 	"github.com/metamorfoso/recipe-book/recipes"
+	"github.com/stretchr/testify/assert"
 )
 
 type ChannelOutput struct {
@@ -45,31 +48,40 @@ func TestPullRecipe(t *testing.T) {
 	}()
 
 	for output := range channel {
-		fmt.Println("------")
+		// defer jsonPrint(output.Result)
 
 		if output.Error != nil {
 			fmt.Printf(">>>> ERROR processing %v: %v\n", output.Result.Url, output.Error)
 			t.Fail()
-		} else {
-			fmt.Printf("Possible ingredients for %v:\n", output.Result.Url)
-			fmt.Printf("(Discovered by looking through %v elements)\n", output.Result.Ingredients.DiscoveredVia)
+		}
 
-			for index, ingredientGroup := range output.Result.Ingredients.Candidates {
-				fmt.Printf("Set %v:\n", index+1)
-				for _, ingredient := range ingredientGroup {
-					fmt.Printf("- %v\n", ingredient)
-				}
-			}
+		content, err := os.ReadFile("./expected.json")
+		if err != nil {
+			t.Fatal("Error when opening file: ", err)
+		}
 
-			fmt.Printf("Possible instructions for %v:\n", output.Result.Url)
-			fmt.Printf("(Discovered by looking through %v elements)\n", output.Result.Instructions.DiscoveredVia)
+		var payload []recipes.RecipePullResult
+		err = json.Unmarshal(content, &payload)
+		if err != nil {
+			t.Fatal("Error during Unmarshal(): ", err)
+		}
 
-			for index, instructionsGroup := range output.Result.Instructions.Candidates {
-				fmt.Printf("Set %v:\n", index+1)
-				for _, instruction := range instructionsGroup {
-					fmt.Printf("- %v\n", instruction)
-				}
+		var expected recipes.RecipePullResult
+		for _, result := range payload {
+			if result.Url == output.Result.Url {
+				expected = result
+				break
 			}
 		}
+
+		actual := output.Result
+
+		assert.EqualValues(t, actual, expected)
 	}
+}
+
+func jsonPrint(i interface{}) {
+	bytes, _ := json.MarshalIndent(i, "", "  ")
+	formatted := string(bytes)
+	fmt.Println(formatted)
 }

@@ -36,8 +36,9 @@ type RecipePullResult struct {
 
 func PullRecipe(url string) (RecipePullResult, error) {
 	result := RecipePullResult{
-		Url:         url,
-		Ingredients: RecipeSectionResult{},
+		Url:          url,
+		Ingredients:  RecipeSectionResult{},
+		Instructions: RecipeSectionResult{},
 	}
 
 	fmt.Printf("Pulling recipe from %v\n", url)
