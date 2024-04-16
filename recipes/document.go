@@ -39,13 +39,15 @@ func findByClassOrIdContains(doc *goquery.Document, elTypes []string, keyword st
 	return matchingElements
 }
 
-func textFromElementSelections(selections []*goquery.Selection) [][]string {
-	// Note: for now it seems only the first match is relevant. This needs more exploration.
-	firstMatching := selections[0]
+func elementSelectionsToCandidates(selections []*goquery.Selection) [][]string {
+	var candidates [][]string
 
-	text := firstMatching.Text()
-	textItems := strings.Split(text, "\n")
-	tidiedTextItems := tidyIngredients(textItems)
+	for _, selection := range selections {
+		text := selection.Text()
+		textItems := strings.Split(text, "\n")
+		tidiedTextItems := tidyIngredients(textItems)
+		candidates = append(candidates, tidiedTextItems)
+	}
 
-	return Candidates{tidiedTextItems}
+	return candidates
 }

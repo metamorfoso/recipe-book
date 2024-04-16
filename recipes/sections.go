@@ -42,7 +42,7 @@ func findRecipeSection(doc *goquery.Document, priorityElementTypes []string, key
 			continue
 		}
 
-		candidates := textFromElementSelections(selections)
+		candidates := elementSelectionsToCandidates(selections)
 		result.DiscoveredVia = "*"
 		result.appendCandidates(candidates)
 	}
