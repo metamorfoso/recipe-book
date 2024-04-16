@@ -64,16 +64,18 @@ func PullRecipe(url string) (RecipePullResult, error) {
 	wg := &sync.WaitGroup{}
 	ch := make(chan SubresultChannelOuput)
 
+	elementTypesToPriotise := []string{"ul", "ol"}
+
 	wg.Add(1)
 	go func() {
-		ingredientsResult, err := findRecipeSection(doc, "ul", []string{ingredientsKeyword})
+		ingredientsResult, err := findRecipeSection(doc, elementTypesToPriotise, []string{ingredientsKeyword})
 		ch <- SubresultChannelOuput{SubResult: ingredientsResult, Error: err, Type: "ingredients"}
 		wg.Done()
 	}()
 
 	wg.Add(1)
 	go func() {
-		instructionsResult, err := findRecipeSection(doc, "ol", instructionsKeywords)
+		instructionsResult, err := findRecipeSection(doc, elementTypesToPriotise, instructionsKeywords)
 		ch <- SubresultChannelOuput{SubResult: instructionsResult, Error: err, Type: "instructions"}
 		wg.Done()
 	}()

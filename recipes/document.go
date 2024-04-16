@@ -22,17 +22,19 @@ func ulToCandidates(selections []*goquery.Selection) [][]string {
 	return candidates
 }
 
-func findByClassOrIdContains(doc *goquery.Document, elType string, keyword string) []*goquery.Selection {
+func findByClassOrIdContains(doc *goquery.Document, elTypes []string, keyword string) []*goquery.Selection {
 	var matchingElements []*goquery.Selection
 
-	doc.Find(elType).Each(func(_ int, selection *goquery.Selection) {
-		class := selection.AttrOr("class", "")
-		id := selection.AttrOr("id", "")
+	for _, elType := range elTypes {
+		doc.Find(elType).Each(func(_ int, selection *goquery.Selection) {
+			class := selection.AttrOr("class", "")
+			id := selection.AttrOr("id", "")
 
-		if strings.Contains(class, keyword) || strings.Contains(id, keyword) {
-			matchingElements = append(matchingElements, selection)
-		}
-	})
+			if strings.Contains(class, keyword) || strings.Contains(id, keyword) {
+				matchingElements = append(matchingElements, selection)
+			}
+		})
+	}
 
 	return matchingElements
 }

@@ -11,18 +11,18 @@ func (subResult *RecipeSectionResult) appendCandidates(candidates [][]string) {
 	subResult.Candidates = append(subResult.Candidates, candidates...)
 }
 
-func findRecipeSection(doc *goquery.Document, priorityElementType string, keywords []string) (RecipeSectionResult, error) {
+func findRecipeSection(doc *goquery.Document, priorityElementTypes []string, keywords []string) (RecipeSectionResult, error) {
 	result := RecipeSectionResult{}
 
 	for _, keyword := range keywords {
-		selections := findByClassOrIdContains(doc, priorityElementType, keyword)
+		selections := findByClassOrIdContains(doc, priorityElementTypes, keyword)
 
 		if len(selections) == 0 {
 			continue
 		}
 
 		candidates := ulToCandidates(selections)
-		result.DiscoveredVia = priorityElementType
+		result.DiscoveredVia = strings.Join(priorityElementTypes, " ")
 		result.appendCandidates(candidates)
 	}
 
@@ -31,7 +31,8 @@ func findRecipeSection(doc *goquery.Document, priorityElementType string, keywor
 	}
 
 	for _, keyword := range keywords {
-		selections := findByClassOrIdContains(doc, "*", keyword)
+		elementTypesToSearch := []string{"*"}
+		selections := findByClassOrIdContains(doc, elementTypesToSearch, keyword)
 
 		if len(selections) == 0 {
 			continue
