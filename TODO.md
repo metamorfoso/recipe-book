@@ -13,7 +13,16 @@
     [x] Basic integration test
         [x] Asynchronously pull recipes from multiple sources
         [x] Readable struct/json diffs
+    [ ] Better integration testing
+        [ ] HTML fixtures
+        [ ] Option to update fixtures with "network" run
     [ ] Unit testing
+        [ ] fincRecipeSection function
+            [x] Basic table-driven tests
+            [ ] Tests for finding sections via different element types
+                [x] Priority element types: ul, ol
+                [ ] Generic element type: *
+            [ ] Tests against multiple fixtures
     [ ] Add benchmarks
 [x] Asynchronous downloading and processing of each page
 [ ] HTTP service
