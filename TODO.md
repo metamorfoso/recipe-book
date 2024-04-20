@@ -9,6 +9,7 @@
         [x] Then look for all other types of elements
     [ ] A more robust way to search for recipe sections
         [ ] Pass to LLM with a prompt to find anything that looks like a recipe section?
+    [ ] Timeout & cancellation
 [ ] Testing
     [x] Basic integration test
         [x] Asynchronously pull recipes from multiple sources
